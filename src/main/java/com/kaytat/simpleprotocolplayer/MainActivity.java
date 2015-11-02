@@ -21,6 +21,7 @@
 package com.kaytat.simpleprotocolplayer;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -72,6 +73,9 @@ public class MainActivity extends Activity implements OnClickListener {
 
     Button mPlayButton;
     Button mStopButton;
+
+    ComponentName serviceComponent = new ComponentName("com.kaytat.simpleprotocolplayer",
+            "com.kaytat.simpleprotocolplayer.MusicService");
 
     /**
      * Called when the activity is first created. Here, we simply set the event listeners and
@@ -319,7 +323,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
         // These hard-coded values should match the defaults in the strings array
         Resources res = getResources();
-
+        /* FIXME broken on Android TV?
         mSampleRate = myPrefs.getInt(RATE_PREF, MusicService.DEFAULT_SAMPLE_RATE);
         String rateString = Integer.toString(mSampleRate);
         String[] sampleRateStrings = res.getStringArray(R.array.sampleRates);
@@ -330,7 +334,8 @@ public class MainActivity extends Activity implements OnClickListener {
                 break;
             }
         }
-
+        */
+        /* FIXME broken on Android TV?
         mStereo = myPrefs.getBoolean(STEREO_PREF, MusicService.DEFAULT_STEREO);
         String[] stereoStrings = res.getStringArray(R.array.stereo);
         Spinner stereoSpinner = (Spinner) findViewById(R.id.stereo);
@@ -340,11 +345,11 @@ public class MainActivity extends Activity implements OnClickListener {
         } else {
             stereoSpinner.setSelection(1);
         }
-
+        */
         mBufferMs = myPrefs.getInt(BUFFER_MS_PREF, 50);
         Log.d(TAG, "mBufferMs:" + mBufferMs);
         EditText e = (EditText)findViewById(R.id.editTextBufferSize);
-        e.setText(Integer.toString(mBufferMs));
+        //e.setText(Integer.toString(mBufferMs)); // FIXME broken on Android TV?
     }
 
     @Override
@@ -372,6 +377,8 @@ public class MainActivity extends Activity implements OnClickListener {
         if (target == mPlayButton) {
             // Get the IP address and port and put it in the intent
             Intent i = new Intent(MusicService.ACTION_PLAY);
+            i.setComponent(serviceComponent);
+
             String ipAddr = mIPAddrText.getText().toString();
             String portStr = mAudioPortText.getText().toString();
             if (ipAddr == null || ipAddr.equals("")) {
@@ -401,7 +408,8 @@ public class MainActivity extends Activity implements OnClickListener {
                 String rateStr = String.valueOf(sampleRateSpinner.getSelectedItem());
                 String[] rateSplit = rateStr.split(" ");
                 if (rateSplit.length != 0) {
-                    mSampleRate = Integer.parseInt(rateSplit[0]);
+                    // mSampleRate = Integer.parseInt(rateSplit[0]); // FIXME broken on Android TV?
+                    mSampleRate = 48000;
                     Log.i(TAG, "rate:" + mSampleRate);
                     i.putExtra(MusicService.DATA_SAMPLE_RATE, mSampleRate);
                 }
@@ -427,6 +435,7 @@ public class MainActivity extends Activity implements OnClickListener {
             }
 
             // Get the latest buffer entry
+            /* FIXME broken on Android TV?
             EditText e = (EditText)findViewById(R.id.editTextBufferSize);
             String bufferMsString = e.getText().toString();
             if (bufferMsString == null || bufferMsString.isEmpty()) {
@@ -434,6 +443,8 @@ public class MainActivity extends Activity implements OnClickListener {
             } else {
                 mBufferMs = Integer.parseInt(bufferMsString);
             }
+            */
+            mBufferMs = 500;
             i.putExtra(MusicService.DATA_BUFFER_MS, mBufferMs);
 
             // Save current settings
@@ -441,8 +452,14 @@ public class MainActivity extends Activity implements OnClickListener {
             startService(i);
         }
         else if (target == mStopButton) {
+            Intent i = new Intent(MusicService.ACTION_STOP);
+            i.setComponent(serviceComponent);
+
             hideKb();
-            startService(new Intent(MusicService.ACTION_STOP));
+            startService(i);
+
+            //boolean ok = stopService(i);
+            //Log.i(TAG, "stopService: " + Boolean.valueOf(ok).toString());
         }
     }
 
